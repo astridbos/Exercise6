@@ -9,18 +9,25 @@ rm(list=ls())
 library(sp)
 library(rgdal)
 library(rgeos)
+library(raster)
 
 # Check working directory
 getwd()
 
 # Call functions
-source()
-#source()
+source("R/download_data.R")
 
 # Specify weblinks to download
 #URL
 
 #Download & unzip data
+MODISdata <- download_data("https://github.com/GeoScripting-WUR/VectorRaster/raw/gh-pages/data/MODIS.zip")
+placesData <- download_data("http://www.mapcruzin.com/download-shapefile/netherlands-places-shape.zip")
+
+MODIS <- brick(MODISdata[1])
+MODIS
+spplot(MODIS)
+plot(placesData, add=T)
 
 # Change projection
 #project_RD <- CRS("+proj=sterea +lat_0=52.15616055555555 +lon_0=5.38763888888889
