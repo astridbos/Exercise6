@@ -11,17 +11,17 @@
 rm(list=ls())
 
 # Import packages
-library(sp)
 library(rgdal)
 library(rgeos)
 library(raster)
-library(ggplot2)
 
 # Check working directory
 getwd()
 
 # Call functions
 source("R/download_data.R")
+source("R/find_max.R")
+source("R/plot_result.R")
 
 # Specify weblinks to download
 MODISdata <- download_data("https://github.com/GeoScripting-WUR/VectorRaster/
@@ -36,34 +36,42 @@ places_rprj <- spTransform(places, CRS(proj4string(MODIS)))
 places_name <- places_rprj[,c(8,6)]
 
 # Extract NDVI per month (and remove NAs) and add Annual mean column
-NDVIs <- extract(MODIS, places_name, fun=mean, df=T, sp=T, na.rm=T)
-NDVIdf <- data.frame(NDVIs)             # Convert spatial polygon data frame to data frame
+NDVIs <- extract(MODIS, places_name, fun=mean, df=T, sp=T, na.rm=T)     # Extracting, may take some time
+NDVIdf <- data.frame(NDVIs)                                             # Convert spatial polygon data frame to data frame
 NDVIs$Annual_Mean <- rowMeans(NDVIdf [,c(-1,-2)])
-NDVIdf$Annual_Mean <- rowMeans(NDVIdf [,c(-1,-2)])           ##overbodig?
+NDVIdf$Annual_Mean <- rowMeans(NDVIdf [,c(-1,-2)])
 
-# Plot NDVI for 1 month or for the annual mean(select by using zcol="")
-spplot(NDVIs)                     # Plot all months
-spplot(NDVIs, zcol="January")     # Plot January NDVI
-spplot(NDVIs, zcol="August")      # Plot August NDVI
-spplot(NDVIs, zcol="Annual_Mean", col.regions = colorRampPalette(c("white","darkkhaki","darkgreen"))(100),
-       main = "Average annual NDVI per municipality", sub = "municipality with highest value marked in red") # Plot Annual mean NDVI
-spplot((places_rprj[places_rprj$NAME_2 == "Graafstroom",]), add=T, cex = 3, col = "red")
+# Obtain max NDVI values (per month, per municipality)
+find_max_January(NDVIs)
+find_max_August(NDVIs)
 
-# Obtain max NDVI values
-January <- NDVIdf[,c(1,3)]
-January_order <- January[order(January$January, decreasing = T), ]
-print(paste("The max NDVI in January is found in", January_order$NAME_2[1], 
-            "with a value of", January_order$January[1]))
+# Obtain max NDVI values (annual average, per municipality)
+find_max_AnnualMean(NDVIs)
 
-August <- NDVIdf[,c(1,10)]
-August_order <- August[order(August$August, decreasing = T), ]
-print(paste("The max NDVI in August is found in", August_order$NAME_2[1], 
-            "with a value of", August$August[1]))
 
-AnnualMean <- NDVIdf [,c(1,15)]
-AnnualMean_order <- AnnualMean[order(AnnualMean$Annual_Mean, decreasing = T), ]
-print(paste("The max NDVI over a whole year is found in", AnnualMean_order
-            $NAME_2[1], "with an average value of", AnnualMean_order$Annual_Mean[1]))
+# Plot NDVI results in maps
+plot_NDVIs(NDVIs)                       # Plot all months, per municipality (plotting may take some time)
+
+plot_January(NDVIs, "municipality")     # Plot NDVI January, per municipality
+
+plot_August(NDVIs, "municipality")      # Plot NDVI August, per municipality
+
+plot_Annual_Mean(NDVIs, "municipality") # Plot NDVI Annual Mean, per municipality
+
+###################################################################  
+############################## EXTRA ############################## 
+###################################################################
+
+# Aggregation of results, shows results per province instead of per municipality
+
+# Max values, comparing provinces
+Prov_data <- aggregate(NDVIdf[,-1:-2], NDVIdf["NAME_1"], FUN=mean, dissolve=T, na.rm=T)
+
+# Find max values for provinces and print results
+
+find_max_prov_January()
+find_max_prov_August()
+find_max_prov_AnnualMean()
 
 ############ end of script ####################
 
