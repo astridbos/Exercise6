@@ -4,6 +4,8 @@
 
 # Function to download and unzip data
 download_data <- function(URL){
+        datdir <- 'data'
+        dir.create(datdir, showWarnings = FALSE)
         download.file(url=URL, destfile='data/URL.zip', method='auto')
         unzip('data/URL.zip', exdir="data")
 }
